@@ -5,7 +5,6 @@ export const getPeople = async (queryParamsArray) => {
         ? `${endpoint}?${queryParamsArray.join('&')}`
         : endpoint
 
-        console.log(url);
     const res = await fetch(url);
     const parsed = await res.json();
     return parsed;

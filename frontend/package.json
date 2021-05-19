@@ -14,7 +14,7 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "test": "npm run test:generate-api-responses && react-scripts test",
+    "test": "npm run test-data-generator && react-scripts test",
     "test-data-generator": "set NODE_ENV=testing && node ../backend/test-data-generator.js test-data/",
     "eject": "react-scripts eject"
   },
