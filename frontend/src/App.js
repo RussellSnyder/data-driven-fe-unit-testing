@@ -1,5 +1,5 @@
 import './App.css';
-import { getPeople, getPeopleByRegistrationStatus } from './services/people-api';
+import { getPeople } from './services/people-api';
 import { useEffect, useState } from 'react';
 import PeopleTable from './components/people-table';
 
@@ -23,13 +23,18 @@ function App() {
         hasImageFilter !== FILTER.OFF ? `hasImage=${hasImageFilter}` : false,
       ].filter(Boolean)
 
-      const res = await getPeople(queryParamsArray);
+      try {
+        const { status, data, error } = await getPeople(queryParamsArray);
 
-      if (res.status === 200) {
-        setError('');
-        setPeople(res.data);
-      } else {
-        setError(res.error)
+        if (status === 200) {
+          setError('');
+          setPeople(data);
+        } else {
+          setError(error)
+          setPeople([]);
+        }
+      } catch (e) {
+        setError(e)
         setPeople([]);
       }
     }
@@ -46,7 +51,7 @@ function App() {
       <div className="controls">
         <div className="control">
           <label>Registration Status</label>
-          <select value={isRegisteredFilter} onChange={(e) => setIsRegisteredFilter(e.target.value)}>
+          <select data-testid='registration-dropdown' value={isRegisteredFilter} onChange={(e) => setIsRegisteredFilter(e.target.value)}>
             <option value={FILTER.OFF}>All</option>
             <option value={FILTER.WITH}>Registered Only</option>
             <option value={FILTER.WITHOUT}>Unregistered Only</option>
@@ -54,7 +59,7 @@ function App() {
         </div>
         <div className="control">
           <label>Photo Status</label>
-          <select value={hasImageFilter} onChange={(e) => setHasImageFilter(e.target.value)}>
+          <select data-testid='image-dropdown' value={hasImageFilter} onChange={(e) => setHasImageFilter(e.target.value)}>
             <option value={FILTER.OFF}>All</option>
             <option value={FILTER.WITH}>With Photos</option>
             <option value={FILTER.WITHOUT}>Without Photos</option>
@@ -63,12 +68,12 @@ function App() {
       </div>
       {error && <div className="error"><h3>{error}</h3></div>}
       {!error && people.length
-        ? <PeopleTable
+        ? <PeopleTable            
             people={people}
             hideImageColumn={hasImageFilter === FILTER.WITHOUT}
             hideRegistrationColumn={isRegisteredFilter !== FILTER.OFF}
           />
-        : <h3>Loading People....</h3>
+        : <h3 data-testid="loading">Loading People...</h3>
       }
     </div>
   );

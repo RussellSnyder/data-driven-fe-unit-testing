@@ -16,7 +16,7 @@ export default function PeopleTable({ people, hideImageColumn, hideRegistrationC
   ));
 
   return (
-    <table className="people-table">
+    <table className="people-table" data-testid="people-table">
       <thead>
         <tr>
             {!hideImageColumn && <th>Image</th>}
