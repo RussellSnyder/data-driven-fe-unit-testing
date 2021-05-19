@@ -12,3 +12,14 @@
   font-size: calc(10px + 1vmin);
   color: white;
 }
+
+.controls {
+  padding: 40px;
+  display: flex;
+  justify-content: space-around;
+}
+
+.control label {
+  display: block;
+  margin-bottom: 15px;
+}

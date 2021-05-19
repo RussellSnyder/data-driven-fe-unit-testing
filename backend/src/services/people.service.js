@@ -8,7 +8,7 @@ class PeopleService {
             return people;
         }
 
-        if (queryParams.hasImage !== undefined && queryParams.hasImage) {
+        if (queryParams.hasImage !== undefined) {
             people = people.filter((person) => Boolean(person.image) === queryParams.hasImage)
         }
 

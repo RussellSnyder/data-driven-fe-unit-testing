@@ -3,31 +3,39 @@ import { getPeople, getPeopleByRegistrationStatus } from './services/people-api'
 import { useEffect, useState } from 'react';
 import PeopleTable from './components/people-table';
 
-const REGISTRATION_STATUS = {
-  REGISTERED: 'registered',
-  UNREGISTERED: 'unregistered',
-  ALL: 'all'  
+const FILTER = {
+  WITH: 'true',
+  WITHOUT: 'false',
+  OFF: 'off'
 }
 
 function App() {
+  const [error, setError] = useState('');
   const [people, setPeople] = useState([]);
-  const [isRegisteredFilter, setIsRegisteredFilter] = useState(REGISTRATION_STATUS.ALL);
+
+  const [isRegisteredFilter, setIsRegisteredFilter] = useState(FILTER.OFF);
+  const [hasImageFilter, setHasImageFilter] = useState(FILTER.OFF);
 
   useEffect(() => {
     async function loadData() {
-      let people;
-      if (isRegisteredFilter === REGISTRATION_STATUS.ALL) {
-        people = await getPeople();
-      } else if (isRegisteredFilter === REGISTRATION_STATUS.REGISTERED) {
-        people = await getPeopleByRegistrationStatus(true);
-      } else if (isRegisteredFilter === REGISTRATION_STATUS.UNREGISTERED) {
-        people = await getPeopleByRegistrationStatus(false);
+      const queryParamsArray = [
+        isRegisteredFilter !== FILTER.OFF ? `isRegistered=${isRegisteredFilter}` : false,
+        hasImageFilter !== FILTER.OFF ? `hasImage=${hasImageFilter}` : false,
+      ].filter(Boolean)
+
+      const res = await getPeople(queryParamsArray);
+
+      if (res.status === 200) {
+        setError('');
+        setPeople(res.data);
+      } else {
+        setError(res.error)
+        setPeople([]);
       }
-      setPeople(people);
     }
     
     loadData();
-  }, [isRegisteredFilter]);
+  }, [isRegisteredFilter, hasImageFilter]);
 
   return (
     <div className="App">
@@ -35,12 +43,33 @@ function App() {
         <h1>People</h1>
       </header>
 
-      <select value={isRegisteredFilter} onChange={(e) => setIsRegisteredFilter(e.target.value)}>
-        <option value={REGISTRATION_STATUS.ALL}>All</option>
-        <option value={REGISTRATION_STATUS.REGISTERED}>Registered Only</option>
-        <option value={REGISTRATION_STATUS.UNREGISTERED}>Unregistered Only</option>
-      </select>
-      {people.length ? <PeopleTable people={people}/> : <h3>Loading People....</h3>}
+      <div className="controls">
+        <div className="control">
+          <label>Registration Status</label>
+          <select value={isRegisteredFilter} onChange={(e) => setIsRegisteredFilter(e.target.value)}>
+            <option value={FILTER.OFF}>All</option>
+            <option value={FILTER.WITH}>Registered Only</option>
+            <option value={FILTER.WITHOUT}>Unregistered Only</option>
+          </select>
+        </div>
+        <div className="control">
+          <label>Photo Status</label>
+          <select value={hasImageFilter} onChange={(e) => setHasImageFilter(e.target.value)}>
+            <option value={FILTER.OFF}>All</option>
+            <option value={FILTER.WITH}>With Photos</option>
+            <option value={FILTER.WITHOUT}>Without Photos</option>
+          </select>
+        </div>
+      </div>
+      {error && <div className="error"><h3>{error}</h3></div>}
+      {!error && people.length
+        ? <PeopleTable
+            people={people}
+            hideImageColumn={hasImageFilter === FILTER.WITHOUT}
+            hideRegistrationColumn={isRegisteredFilter !== FILTER.OFF}
+          />
+        : <h3>Loading People....</h3>
+      }
     </div>
   );
 }

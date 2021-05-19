@@ -8,6 +8,6 @@ app.use(cors());
 
 app.get('/api/people', peopleController.getPeople);
 
-app.listen(3000, () =>
-  console.log('Example app listening on port 3000!'),
+app.listen(3001, () =>
+  console.log('People List BE listening on port 3001'),
 );

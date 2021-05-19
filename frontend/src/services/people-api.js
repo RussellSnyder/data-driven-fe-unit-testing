@@ -1,15 +1,12 @@
-const endpoint = 'http://localhost:3000/api/people'
+const endpoint = 'http://localhost:3001/api/people'
 
-export const getPeople = async () => {
-    const res = await fetch(endpoint);
-    const people = res.json();
+export const getPeople = async (queryParamsArray) => {
+    const url = queryParamsArray 
+        ? `${endpoint}?${queryParamsArray.join('&')}`
+        : endpoint
 
-    return people;
-}
-
-export const getPeopleByRegistrationStatus = async (isRegistered) => {
-    const res = await fetch(`${endpoint}?isRegistered=${isRegistered}`);
-    const people = res.json();
-
-    return people;
+        console.log(url);
+    const res = await fetch(url);
+    const parsed = await res.json();
+    return parsed;
 }

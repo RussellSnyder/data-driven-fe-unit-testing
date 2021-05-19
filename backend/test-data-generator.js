@@ -3,7 +3,7 @@ const peopleController = require('./src/controllers/people.controller');
 
 const destination = process.argv[2];
 if (!destination) {
-    console.error('no destination for mock data');
+    console.error('no destination for mock data :-(');
     return;
 }
 
@@ -11,7 +11,7 @@ const createDataFileName = (prefix, queryParam) => {
     let suffix = '';
     Object.entries(queryParam).forEach(([key, value]) => suffix += `-${key}-${value}`)
 
-    return `${process.cwd()}/${destination}${prefix}${suffix ? `${suffix}` : ''}.json`
+    return `${process.cwd()}/${destination}/${prefix}/${prefix}${suffix ? `${suffix}` : ''}.json`
 }
 
 const getQueryParamsCombinations = (queryParamsOptions) => {
@@ -45,50 +45,30 @@ const getQueryParamsCombinations = (queryParamsOptions) => {
 }
 
 async function generatePeopleData() {
-    const peopleQueryParamsCombinations = getQueryParamsCombinations(peopleController.queryParamsOptions);
+    const peopleQueryParamsCombinations = [
+        {}, // empty query
+        { unsupported: 'query'}, // should return 400
+        ...getQueryParamsCombinations(peopleController.queryParamsOptions)];
 
     await Promise.all(peopleQueryParamsCombinations.map(async (queryParam) => {
-        await peopleController.getPeople(queryParam, {
-            send: (data) => fs.writeFile(createDataFileName('people', queryParam), data, { flag: 'w' }, err => {
-                if (err) {
-                    console.error(err)
-                    return
-                  }
+        const req = {
+            query: queryParam
+        }
+        await peopleController.getPeople(req, {
+            send: (data) => fs.writeFile(
+                createDataFileName('people', queryParam),
+                JSON.stringify(data),
+                { flag: 'w' },
+                err => {
+                    if (err) {
+                        console.error(err)
+                        return
+                    }
                 console.log(`created ${createDataFileName('people', queryParam)}`)
             })
         });
     }));
     
-    // await peopleController.getPeople({}, {
-    //     send: (data) => fs.writeFile(createDataFileName('people'), data, { flag: 'w' }, err => {
-    //         if (err) {
-    //             console.error(err)
-    //             return
-    //           }
-    //         console.log(`created ${createDataFileName('people')}`)
-    //     })
-    // });
-
-    // await peopleController.getPeople({ query: { 'isRegistered': 'true' }}, {
-    //     send: (data) => fs.writeFile(createDataFileName('people', 'registered-true'), data, { flag: 'w' }, err => {
-    //         if (err) {
-    //             console.error(err)
-    //             return
-    //           }
-    //         console.log(`created ${createDataFileName('people', 'registered-true')}`)
-    //     })
-    // });
-
-    // await peopleController.getPeople({ query: { 'isRegistered': 'false' }}, {
-    //     send: (data) => fs.writeFile(createDataFileName('people', 'registered-false'), data, { flag: 'w' }, err => {
-    //         if (err) {
-    //             console.error(err)
-    //             return
-    //           }
-    //         console.log(`created ${createDataFileName('people', 'registered-false')}`)
-    //     })
-    // });    
 }
-
 
 generatePeopleData();

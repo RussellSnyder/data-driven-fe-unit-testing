@@ -11,48 +11,63 @@ class PeopleController {
 
         if (!query || Object.keys(query).length === 0) {
             const people = await peopleService.getAllPeople();
-            res.send(JSON.stringify(people));
+            res.send({
+                status: 200,
+                data: people
+            });
             return;
         }
 
         const parsedQuery = parseQueryParams(query);
-        
-        console.log({ parsedQuery });
 
         if (Object.keys(parsedQuery).length) {
             const people = await peopleService.getAllPeople(parsedQuery);
-            res.send(JSON.stringify(people));
+            res.send({
+                status: 200,
+                data: people
+            });
             return;
         }
 
-        res.status(400).send(`Could no understand query ${JSON.stringify(query)}`);
+        res.send({
+            status: 400,
+            error: `Could no understand query '${Object.keys(query).join(', ')}'`
+        });
     };
 
-    parseQueryParams(rawQuery) {
-        const parsedQuery = {};
-    
-        const {
-            isRegistered: rawIsRegistered,
-            hasImage: rawHasImage
-        } = rawQuery;
-        
-        let isRegistered = rawIsRegistered === 'true' ? true : undefined;
-        isRegistered = rawIsRegistered === 'false' ? false : isRegistered;
-        if (isRegistered !== undefined) {
-            parsedQuery.isRegistered = isRegistered
-        }
-    
-        let hasImage = rawHasImage === 'true' ? true : undefined;
-        hasImage = rawHasImage === 'false' ? false : hasImage;
-        if (hasImage !== undefined) {
-            parsedQuery.hasImage = hasImage;
-        }
-    
-        return parsedQuery;    
-    }
 }
 
+const parseQueryParams = (rawQuery) => {
+    const parsedQuery = {};
 
+    const { isRegistered, hasImage, ...unsupported } = rawQuery;
+
+    if (Object.keys(unsupported).length) {
+        return parsedQuery;
+    }
+    
+    if (parseBooleanString(isRegistered) !== undefined) {
+        parsedQuery.isRegistered = parseBooleanString(isRegistered)
+    }
+
+    if (parseBooleanString(hasImage) !== undefined) {
+        parsedQuery.hasImage = parseBooleanString(hasImage);
+    }
+
+    return parsedQuery;    
+}
+
+const parseBooleanString = (booleanOrBooleanString) => {
+    if (typeof booleanOrBooleanString === 'boolean') {
+        return booleanOrBooleanString;
+    }
+    if (booleanOrBooleanString === 'true') {
+        return true;
+    }
+    if (booleanOrBooleanString === 'false') {
+        return false;
+    }
+}
 
 const peopleController = new PeopleController();
 

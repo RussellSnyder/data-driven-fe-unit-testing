@@ -1,17 +1,17 @@
 import './people-table.css';
 
 
-export default function PeopleTable({ people }) {
+export default function PeopleTable({ people, hideImageColumn, hideRegistrationColumn }) {
   const peopleRows = people.map(({ image, name, email, isRegistered }, i) => (
         <tr key={`${name}${i}`}>
-            <td>
-              <img src={image} alt={`avatar or ${name}`} />
-            </td>
+            {!hideImageColumn && <td>
+              {image ? <img src={image} alt={`avatar or ${name}`} /> : 'no image available'}
+            </td>}
             <td>{name}</td>
             <td>{email}</td>
-            <td style={{ color: isRegistered ? 'green' : 'red' }}>
+            {!hideRegistrationColumn && <td style={{ color: isRegistered ? 'green' : 'red' }}>
               {isRegistered ? 'Registered' : 'Not Registered'}
-            </td>
+            </td>}
         </tr>
   ));
 
@@ -19,10 +19,10 @@ export default function PeopleTable({ people }) {
     <table className="people-table">
       <thead>
         <tr>
-            <th>Image</th>
+            {!hideImageColumn && <th>Image</th>}
             <th>Name</th>
             <th>Email</th>
-            <th>Is Registered</th>
+            {!hideRegistrationColumn && <th>Is Registered</th>}
         </tr>
       </thead>
       <tbody>
