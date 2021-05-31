@@ -10,6 +10,7 @@ const FILTER = {
 }
 
 function App() {
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [people, setPeople] = useState([]);
 
@@ -18,6 +19,8 @@ function App() {
 
   useEffect(() => {
     async function loadData() {
+      setIsLoading(true);
+
       const queryParamsArray = [
         isRegisteredFilter !== FILTER.OFF ? `isRegistered=${isRegisteredFilter}` : false,
         hasImageFilter !== FILTER.OFF ? `hasImage=${hasImageFilter}` : false,
@@ -29,13 +32,16 @@ function App() {
         if (status === 200) {
           setError('');
           setPeople(data);
+          setIsLoading(false);
         } else {
-          setError(error)
+          setError(JSON.stringify(error))
           setPeople([]);
+          setIsLoading(false);
         }
       } catch (e) {
         setError(e)
         setPeople([]);
+        setIsLoading(false);
       }
     }
     
@@ -43,7 +49,7 @@ function App() {
   }, [isRegisteredFilter, hasImageFilter]);
 
   return (
-    <div className="App">
+    <div className="App" data-testid="app">
       <header data-testid="app-header">
         <h1>People</h1>
       </header>
@@ -66,15 +72,14 @@ function App() {
           </select>
         </div>
       </div>
-      {error && <div className="error"><h3>{error}</h3></div>}
-      {!error && people.length
-        ? <PeopleTable            
+      {error && <div className="error" data-testid="errors"><h3>{error}</h3></div>}
+      {!error && people.length > 0 && <PeopleTable            
             people={people}
             hideImageColumn={hasImageFilter === FILTER.WITHOUT}
             hideRegistrationColumn={isRegisteredFilter !== FILTER.OFF}
-          />
-        : <h3 data-testid="loading">Loading People...</h3>
-      }
+      />}
+      {!isLoading && !error && people.length === 0 && <h3 data-testid="empty-result">Much empty</h3>}
+      {isLoading && <h3 data-testid="loading">Loading People...</h3>}
     </div>
   );
 }
