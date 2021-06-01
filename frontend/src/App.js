@@ -2,51 +2,55 @@ import './App.css';
 import { getPeople } from './services/people-api';
 import { useEffect, useState } from 'react';
 import PeopleTable from './components/people-table';
-
-const FILTER = {
-  WITH: 'true',
-  WITHOUT: 'false',
-  OFF: 'off'
-}
+import FilterControl from './components/filter-control';
+import { FILTER_VALUES, LOADING_STATE } from './constants/constants';
+import { registrationControlSettings, imageControlSettings } from './components/filter-control-settings'
 
 function App() {
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [loadingState, setLoadingState] = useState(LOADING_STATE.Loading);
   const [people, setPeople] = useState([]);
 
-  const [isRegisteredFilter, setIsRegisteredFilter] = useState(FILTER.OFF);
-  const [hasImageFilter, setHasImageFilter] = useState(FILTER.OFF);
+  const [isRegisteredFilter, setIsRegisteredFilter] = useState(FILTER_VALUES.OFF);
+  const [hasImageFilter, setHasImageFilter] = useState(FILTER_VALUES.OFF);
 
   useEffect(() => {
     async function loadData() {
-      setIsLoading(true);
+      setLoadingState(LOADING_STATE.Loading);
 
       const queryParamsArray = [
-        isRegisteredFilter !== FILTER.OFF ? `isRegistered=${isRegisteredFilter}` : false,
-        hasImageFilter !== FILTER.OFF ? `hasImage=${hasImageFilter}` : false,
+        isRegisteredFilter !== FILTER_VALUES.OFF ? `isRegistered=${isRegisteredFilter}` : false,
+        hasImageFilter !== FILTER_VALUES.OFF ? `hasImage=${hasImageFilter}` : false,
       ].filter(Boolean)
 
       try {
         const { status, data, error } = await getPeople(queryParamsArray);
 
         if (status === 200) {
-          setError('');
           setPeople(data);
-          setIsLoading(false);
+          setLoadingState(data.length > 0 ? LOADING_STATE.DataAvailable : LOADING_STATE.NoData)
         } else {
-          setError(JSON.stringify(error))
-          setPeople([]);
-          setIsLoading(false);
+          setLoadingState(LOADING_STATE.Error)
         }
       } catch (e) {
-        setError(e)
-        setPeople([]);
-        setIsLoading(false);
+        setLoadingState(LOADING_STATE.Error)
       }
     }
     
     loadData();
   }, [isRegisteredFilter, hasImageFilter]);
+
+  const MainContent = () => (
+    <>
+      {loadingState === LOADING_STATE.Loading && <h3 data-testid="loading">Loading People...</h3>}
+      {loadingState === LOADING_STATE.DataAvailable && <PeopleTable            
+            people={people}
+            hideImageColumn={hasImageFilter === FILTER_VALUES.WITHOUT}
+            hideRegistrationColumn={isRegisteredFilter !== FILTER_VALUES.OFF}
+            />}
+      {loadingState === LOADING_STATE.NoData && <h3 data-testid="empty-result">Much empty</h3>}
+      {loadingState === LOADING_STATE.Error && <div className="error" data-testid="errors"><h3>An Error Occurred</h3></div>}
+    </>    
+  )
 
   return (
     <div className="App" data-testid="app">
@@ -55,31 +59,18 @@ function App() {
       </header>
 
       <div className="controls">
-        <div className="control">
-          <label>Registration Status</label>
-          <select data-testid='registration-dropdown' value={isRegisteredFilter} onChange={(e) => setIsRegisteredFilter(e.target.value)}>
-            <option value={FILTER.OFF}>All</option>
-            <option value={FILTER.WITH}>Registered Only</option>
-            <option value={FILTER.WITHOUT}>Unregistered Only</option>
-          </select>
-        </div>
-        <div className="control">
-          <label>Photo Status</label>
-          <select data-testid='image-dropdown' value={hasImageFilter} onChange={(e) => setHasImageFilter(e.target.value)}>
-            <option value={FILTER.OFF}>All</option>
-            <option value={FILTER.WITH}>With Photos</option>
-            <option value={FILTER.WITHOUT}>Without Photos</option>
-          </select>
-        </div>
+        <FilterControl { ...registrationControlSettings }
+          handleChange={setIsRegisteredFilter}
+          value={isRegisteredFilter}
+        />
+        <FilterControl { ...imageControlSettings }
+          handleChange={setHasImageFilter}
+          value={hasImageFilter}
+        />
       </div>
-      {error && <div className="error" data-testid="errors"><h3>{error}</h3></div>}
-      {!error && people.length > 0 && <PeopleTable            
-            people={people}
-            hideImageColumn={hasImageFilter === FILTER.WITHOUT}
-            hideRegistrationColumn={isRegisteredFilter !== FILTER.OFF}
-      />}
-      {!isLoading && !error && people.length === 0 && <h3 data-testid="empty-result">Much empty</h3>}
-      {isLoading && <h3 data-testid="loading">Loading People...</h3>}
+      <div className="main-content">
+        <MainContent />
+      </div>
     </div>
   );
 }

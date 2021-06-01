@@ -1,22 +1,41 @@
-import { render, screen, fireEvent, act, waitFor, waitForElementToBeRemoved } from '@testing-library/react';
+import react from 'react';
+import '@testing-library/jest-dom/extend-expect'
+import { render, screen, fireEvent, act, waitFor, waitForElementToBeRemoved, cleanup } from '@testing-library/react';
 
 import App from './App';
 
 import mockPeopleResponse from '../test-data/people/people.json';
 import mockPeopleResponse_isRegistered_true from '../test-data/people/people-isRegistered-true.json';
 import mockPeopleResponse_isRegistered_false from '../test-data/people/people-isRegistered-false.json';
+import mockPeopleResponse_hasImage_true from '../test-data/people/people-hasImage-true.json';
+import mockPeopleResponse_hasImage_false from '../test-data/people/people-hasImage-false.json';
 
 import { getPeople } from './services/people-api';
+import PeopleTable from './components/people-table'
+import FilterControl from './components/filter-control';
+import { FILTER_VALUES } from './constants/constants';
+
+afterEach(() => {
+  cleanup();
+})
+
+// Mock services and components
 jest.mock('./services/people-api', () => ({
   getPeople: jest.fn()
 }));
 
+jest.mock('./components/people-table', () => {
+  return jest.fn(() => null)
+});
 
+jest.mock('./components/filter-control', () => {
+  return jest.fn(() => null)
+});
 
 describe('App', () => {
   describe('initial state', () => {
     beforeEach(async () => {
-      getPeople.mockImplementationOnce(() => new Promise(() => null))
+      getPeople.mockImplementationOnce(() => new Promise(() => null));
 
       render(<App />);
 
@@ -47,9 +66,16 @@ describe('App', () => {
       })
     })
 
-    test('loading element is removed and data table is present', async () => {
-      const table = await screen.getByTestId('people-table');
-      expect(table).toBeInTheDocument();
+    test('PeopleTable receives updated people data', async () => {
+      const { people: lastPeopleProps} = PeopleTable.mock.calls[0][0]
+
+      expect(PeopleTable).toHaveBeenCalled();      
+      expect(lastPeopleProps).toEqual(mockPeopleResponse.data)
+    });
+
+    test('loading element is removed', async () => {
+      const loadingElement = screen.queryByText('Loading People...')
+      expect(loadingElement).not.toBeInTheDocument()
     });
   })
 
@@ -84,64 +110,6 @@ describe('App', () => {
     test('error element is present', async () => {
       const errors = await screen.getByTestId('errors');
       expect(errors).toBeInTheDocument();
-    });
-  })
-
-  describe('interactions', () => {
-    describe('registration dropdown', () => {
-      let registrationDropdown;
-
-      beforeEach(async () => {
-        getPeople.mockImplementationOnce(() => mockPeopleResponse);
-        render(<App />);
-
-        await waitFor(() => {
-          expect(screen.getByTestId('app')).toBeInTheDocument()
-        })
-  
-        registrationDropdown = screen.getByTestId('registration-dropdown');
-        expect(registrationDropdown).toBeInTheDocument();
-      })
-
-      describe('change -> true', () => {
-        test('it calls the api service with isRegistered=true', async () => {
-          getPeople.mockImplementationOnce(() => mockPeopleResponse_isRegistered_true);
-
-          fireEvent.change(registrationDropdown, { target: { value: 'true' } })
-          await waitFor(() => expect(getPeople).toHaveBeenCalledWith(['isRegistered=true']))
-        })
-
-      })
-      describe('change -> false', () => {
-        test('it calls the api service with isRegistered=false', async () => {
-          getPeople.mockImplementationOnce(() => mockPeopleResponse_isRegistered_false);
-
-          fireEvent.change(registrationDropdown, { target: { value: 'false' } })
-          await waitFor(() => expect(getPeople).toHaveBeenCalledWith(['isRegistered=false']))
-        })
-      })
-      describe.skip('change -> off', () => {
-        test('it calls the api service without isRegisteredFilter in queryParamArray', async () => {
-          getPeople.mockImplementationOnce(() => mockPeopleResponse);
-
-          fireEvent.change(registrationDropdown, { target: { value: 'off' } })
-          await waitFor(() => expect(getPeople).toHaveBeenCalledWith([]))
-        })
-      })
-    });
-    describe.skip('image dropdown', () => {
-      describe('change -> true', () => {
-        test('it calls the api service with hasImage=true', () => {
-        })
-      })
-      describe('change -> false', () => {
-        test('it calls the api service with hasImage=false', () => {
-        })
-      })
-      describe('change -> off', () => {
-        test('it calls the api service without hasImage in queryParamArray', () => {
-        })
-      })
     });
   })
 })

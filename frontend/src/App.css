@@ -18,8 +18,3 @@
   display: flex;
   justify-content: space-around;
 }
-
-.control label {
-  display: block;
-  margin-bottom: 15px;
-}
